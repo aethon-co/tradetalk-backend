@@ -1,9 +1,8 @@
 const express = require("express")
 require("dotenv").config()
 const dbConnect = require("./db/dbConnect")
-const collegeRouter = require("./routes/college")
-const schoolRouter = require("./routes/school")
 const adminRouter = require("./routes/admin")
+const userRouter = require("./routes/user")
 const cors = require("cors")
 const app = express()
 
@@ -15,8 +14,7 @@ app.use(express.json())
 // }));
 app.use(cors())
 
-app.use("/api/v1/college", collegeRouter)
-app.use("/api/v1/school", schoolRouter)
+app.use("/api/v1/user", userRouter)
 app.use("/api/v1/admin", adminRouter)
 
 

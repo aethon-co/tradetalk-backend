@@ -1,8 +1,7 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const Admin = require("../models/admin");
-const College = require("../models/college");
-const School = require("../models/school");
+const User = require("../models/user");
 
 const signup = async (req, res) => {
     try {
@@ -53,47 +52,30 @@ const login = async (req, res) => {
     }
 };
 
-const getAllColleges = async (req, res) => {
+const getAllUsers = async (req, res) => {
     try {
-        const colleges = await College.find();
-        res.status(200).json(colleges);
+        const users = await User.find();
+        res.status(200).json(users);
     } catch (error) {
-        res.status(500).json({ message: "Error fetching colleges", error: error.message });
+        res.status(500).json({ message: "Error fetching users", error: error.message });
     }
 };
 
-const getAllSchools = async (req, res) => {
-    try {
-        const schools = await School.find();
-        res.status(200).json(schools);
-    } catch (error) {
-        res.status(500).json({ message: "Error fetching schools", error: error.message });
-    }
-};
 
-const getCollegeById = async (req, res) => {
+
+const getUserById = async (req, res) => {
     try {
-        const college = await College.findById(req.params.id);
-        if (!college) {
-            return res.status(404).json({ message: "College not found" });
+        const user = await User.findById(req.params.id);
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
         }
-        res.status(200).json(college);
+        res.status(200).json(user);
     } catch (error) {
-        res.status(500).json({ message: "Error fetching college", error: error.message });
+        res.status(500).json({ message: "Error fetching user", error: error.message });
     }
 };
 
-const getSchoolById = async (req, res) => {
-    try {
-        const school = await School.findById(req.params.id);
-        if (!school) {
-            return res.status(404).json({ message: "School not found" });
-        }
-        res.status(200).json(school);
-    } catch (error) {
-        res.status(500).json({ message: "Error fetching school", error: error.message });
-    }
-};
+
 
 const getAdminById = async (req, res) => {
     try {
@@ -110,9 +92,7 @@ const getAdminById = async (req, res) => {
 module.exports = {
     signup,
     login,
-    getAllColleges,
-    getAllSchools,
-    getCollegeById,
-    getSchoolById,
+    getAllUsers,
+    getUserById,
     getAdminById
 };
