@@ -5,9 +5,9 @@ const User = require("../models/user");
 
 const signup = async (req, res) => {
     try {
-        const { name, password, email } = req.body;
+        const { name, password, username } = req.body;
 
-        const existingAdmin = await Admin.findOne({ email });
+        const existingAdmin = await Admin.findOne({ username });
         if (existingAdmin) {
             return res.status(400).json({ message: "Admin already exists" });
         }
@@ -17,7 +17,7 @@ const signup = async (req, res) => {
         const newAdmin = new Admin({
             name,
             password: hashedPassword,
-            email
+            username
         });
 
         await newAdmin.save();
@@ -32,9 +32,9 @@ const signup = async (req, res) => {
 
 const login = async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const { username, password } = req.body;
 
-        const admin = await Admin.findOne({ email });
+        const admin = await Admin.findOne({ username });
         if (!admin) {
             return res.status(404).json({ message: "Admin not found" });
         }
@@ -52,47 +52,34 @@ const login = async (req, res) => {
     }
 };
 
-const getAllUsers = async (req, res) => {
+
+
+const getCandidatesWithReferrals = async (req, res) => {
     try {
-        const users = await User.find();
+        const users = await User.aggregate([
+            {
+                $lookup: {
+                    from: "users", // Collection name is usually plural of model name lowercased
+                    localField: "referralCode",
+                    foreignField: "referredBy",
+                    as: "referredUsers"
+                }
+            },
+            {
+                $project: {
+                    password: 0, // Exclude password
+                    "referredUsers.password": 0 // Exclude passwords of referred users
+                }
+            }
+        ]);
         res.status(200).json(users);
     } catch (error) {
-        res.status(500).json({ message: "Error fetching users", error: error.message });
-    }
-};
-
-
-
-const getUserById = async (req, res) => {
-    try {
-        const user = await User.findById(req.params.id);
-        if (!user) {
-            return res.status(404).json({ message: "User not found" });
-        }
-        res.status(200).json(user);
-    } catch (error) {
-        res.status(500).json({ message: "Error fetching user", error: error.message });
-    }
-};
-
-
-
-const getAdminById = async (req, res) => {
-    try {
-        const admin = await Admin.findById(req.params.id);
-        if (!admin) {
-            return res.status(404).json({ message: "Admin not found" });
-        }
-        res.status(200).json(admin);
-    } catch (error) {
-        res.status(500).json({ message: "Error fetching admin", error: error.message });
+        res.status(500).json({ message: "Error fetching candidates with referrals", error: error.message });
     }
 };
 
 module.exports = {
     signup,
     login,
-    getAllUsers,
-    getUserById,
-    getAdminById
+    getCandidatesWithReferrals
 };
