@@ -17,9 +17,14 @@ const signup = async (req, res) => {
             return res.status(400).json({ message: "All required fields must be provided" });
         }
 
-        const existingUser = await User.findOne({ email });
+        const existingUser = await User.findOne({ $or: [{ email }, { phoneNumber }] });
         if (existingUser) {
-            return res.status(400).json({ message: "User with this email already exists" });
+            if (existingUser.email === email) {
+                return res.status(400).json({ message: "User with this email already exists" });
+            }
+            if (existingUser.phoneNumber === phoneNumber) {
+                return res.status(400).json({ message: "User with this phone number already exists" });
+            }
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
@@ -69,6 +74,10 @@ const signup = async (req, res) => {
         });
     } catch (error) {
         console.error("Signup error:", error);
+        if (error.code === 11000) {
+            const field = Object.keys(error.keyPattern)[0];
+            return res.status(400).json({ message: `User with this ${field} already exists` });
+        }
         res.status(500).json({ message: "Error creating user", error: error.message });
     }
 };
