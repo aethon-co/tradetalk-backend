@@ -17,7 +17,10 @@ app.use(cookieParser())
 // }));
 // CORS must specify origin when credentials are true (cannot be *)
 app.use(cors({
-    origin: ["http://localhost:5173", "http://localhost:3000", process.env.ORIGIN], // Add your frontend content URL
+    origin: [
+        "http://localhost:5173",
+        "https://tradetalk-auth.vercel.app",
+    ].filter(Boolean),
     credentials: true
 }))
 
