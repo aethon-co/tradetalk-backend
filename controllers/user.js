@@ -61,12 +61,19 @@ const signup = async (req, res) => {
         const token = jwt.sign(
             { id: newUser._id, role: newUser.role },
             process.env.JWT_SECRET || "default_secret_key",
-            { expiresIn: "1h" }
+            { expiresIn: "2d" }
         );
+
+        res.cookie("token", token, {
+            httpOnly: true,
+            // secure: true, // Removed per request to avoid mixed content issues in dev if no https
+            // sameSite: "none", 
+            maxAge: 2 * 24 * 60 * 60 * 1000 // 2 days
+        });
 
         res.status(201).json({
             message: "User created successfully",
-            token,
+            // token, // Token is now in cookie, optional to send back if needed but better not to rely on it in frontend
             user: {
                 ...newUser.toObject(),
                 password: undefined
@@ -99,12 +106,19 @@ const login = async (req, res) => {
         const token = jwt.sign(
             { id: user._id, role: user.role },
             process.env.JWT_SECRET || "default_secret_key",
-            { expiresIn: "1h" }
+            { expiresIn: "2d" }
         );
+
+        res.cookie("token", token, {
+            httpOnly: true,
+            // secure: true, 
+            // sameSite: "none",
+            maxAge: 2 * 24 * 60 * 60 * 1000 // 2 days
+        });
 
         res.status(200).json({
             message: "Login successful",
-            token,
+            // token,
             user: {
                 ...user.toObject(),
                 password: undefined
@@ -115,9 +129,11 @@ const login = async (req, res) => {
     }
 };
 
-const getUserById = async (req, res) => {
+const getMe = async (req, res) => {
     try {
-        const user = await User.findById(req.params.id).select("-password");
+        const userId = req.user.id; // From auth middleware
+        const user = await User.findById(userId).select("-password");
+
         if (!user) {
             return res.status(404).json({ message: "User not found" });
         }
@@ -134,7 +150,34 @@ const getUserById = async (req, res) => {
         responseData.rank = higherRankedUsersCount + 1;
         responseData.referrals = referrals;
 
-        res.status(200).json({ collegeUser: responseData }); // Keeping 'collegeUser' key for minimal frontend breakage initially, or cleaner: user: responseData
+        res.status(200).json({ collegeUser: responseData });
+    } catch (error) {
+        res.status(500).json({ message: "Error fetching user", error: error.message });
+    }
+};
+
+const logout = async (req, res) => {
+    try {
+        res.clearCookie("token", {
+            httpOnly: true,
+            // secure: true,
+            // sameSite: "none"
+        });
+        res.status(200).json({ message: "Logged out successfully" });
+    } catch (error) {
+        res.status(500).json({ message: "Error logging out", error: error.message });
+    }
+}
+
+const getUserById = async (req, res) => {
+    // Deprecated for self-fetch, keeping strictly for admin or public profile if needed
+    // But for now, getMe replaces the dashboard logic.
+    try {
+        const user = await User.findById(req.params.id).select("-password");
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+        res.status(200).json({ user });
     } catch (error) {
         res.status(500).json({ message: "Error fetching user", error: error.message });
     }
@@ -182,6 +225,8 @@ const getLeaderboard = async (req, res) => {
 module.exports = {
     signup,
     login,
+    logout,
+    getMe,
     getUserById,
     deleteUser,
     getLeaderboard
